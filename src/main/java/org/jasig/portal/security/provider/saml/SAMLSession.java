@@ -49,6 +49,9 @@ public class SAMLSession {
   
   // SSL Security options for the IdP
   private SSLSecurityWrapper idpSSL = new SSLSecurityImpl();
+  
+  // Entity ID os the portal
+  private String portalEntityID;
 
   /**
    * Public constructor that initializes the SAML session.  This sets up the
@@ -212,4 +215,23 @@ public class SAMLSession {
     return this.idpSSL.getSSLSocketFactory();
   }
   
+  /**
+   * Returns the portal's entityID.  This entityID is used to identify the
+   * portal to the IdP when the IdP is contacted for delegated authentication.
+   * 
+   * @return the portalEntityID
+   */
+  public String getPortalEntityID() {
+    return portalEntityID;
+  }
+
+  /**
+   * Sets the portal's entityID.  This entityID is used to identify the
+   * portal to the IdP when the IdP is contacted for delegated authentication.
+   * 
+   * @param portalEntityID the portalEntityID to set
+   */
+  public void setPortalEntityID(String portalEntityID) {
+    this.portalEntityID = portalEntityID;
+  }
 }

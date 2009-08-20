@@ -154,6 +154,16 @@ public class SAMLDelegatedAuthenticationService {
    */
   public HttpResponse authenticate(SAMLSession samlSession, Resource resource) {
     
+    if (samlSession.getSamlAssertion() == null) {
+      String message = "SAML assertion not present.";
+      log.error(message);
+      throw new DelegatedAuthenticationRuntimeException(message);
+    }
+    if (samlSession.getPortalEntityID() == null) {
+      String message = "Portal entity ID not present.";
+      log.error(message);
+      throw new DelegatedAuthenticationRuntimeException(message);
+    }
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
     // The following represents the entire delegated authentication flow
     if (getSOAPRequest(samlSession, resource, authnState)) {
@@ -190,6 +200,16 @@ public class SAMLDelegatedAuthenticationService {
    *                      of submitting form data in case if the initial request was from HTTP POST.
    */
   public HttpResponse authenticate(SAMLSession samlSession, byte[] paosBytes) {
+    if (samlSession.getSamlAssertion() == null) {
+      String message = "SAML assertion not present.";
+      log.error(message);
+      throw new DelegatedAuthenticationRuntimeException(message);
+    }
+    if (samlSession.getPortalEntityID() == null) {
+      String message = "Portal entity ID not present.";
+      log.error(message);
+      throw new DelegatedAuthenticationRuntimeException(message);
+    }
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
     authnState.setSoapRequest(paosBytes);
     // The following represents the entire delegated authentication flow
@@ -254,16 +274,12 @@ public class SAMLDelegatedAuthenticationService {
    */
   private boolean getSOAPRequest(SAMLSession samlSession, Resource resource, DelegatedSAMLAuthenticationState authnState) {
     HttpGet method = new HttpGet(resource.getResourceUrl());
-//    method.setHeader("Accept", SAMLConstants.HTTP_HEADER_PAOS_CONTENT_TYPE);
-//    method.setHeader("PAOS", SAMLConstants.HTTP_HEADER_PAOS);
     
     try {
       resource.setupWSPClientConnection(samlSession);
       // There is no need to check the HTTP response status because the HTTP
       // client will handle normal HTTP protocol flow, including redirects
       // In case of error, HTTP client will throw an exception
-//      ResponseHandler<String> responseHandler = new BasicResponseHandler();
-//      String soapRequest = samlSession.getHttpClient().execute(method, responseHandler);
       HttpResponse response = samlSession.getHttpClient().execute(method);
       HttpEntity entity = response.getEntity();
       long contentLength = entity.getContentLength();
@@ -437,12 +453,6 @@ public class SAMLDelegatedAuthenticationService {
         authnState.setRelayStateElement(relayStateElement);
         node.getParentNode().removeChild(node);
         
-        // Save off the issuer prior to removing the ecp:Request element
-        expression = "/S:Envelope/S:Header/ecp:Request/saml2:Issuer";
-        xpathExpression = xpath.compile(expression);
-        node = (Node)xpathExpression.evaluate (dom, XPathConstants.NODE);
-        String issuer = node.getTextContent();
-
         // On to the ecp:Request for removal
         expression = "/S:Envelope/S:Header/ecp:Request";
         xpathExpression = xpath.compile(expression);
@@ -453,16 +463,13 @@ public class SAMLDelegatedAuthenticationService {
         expression = "/S:Envelope/S:Header";
         xpathExpression = xpath.compile(expression);
         Element soapHeader = (Element)xpathExpression.evaluate (dom, XPathConstants.NODE);
-//        soapHeader.setAttribute("xmlns:" + "wsa", namespaceContext.getNamespaceURI("wsa"));
-//        soapHeader.setAttribute("xmlns:" + "sbf", namespaceContext.getNamespaceURI("sbf"));
-//        soapHeader.setAttribute("xmlns:" + "sb", namespaceContext.getNamespaceURI("sb"));
         
         // Add new elements to S:Header
         Element newElement = dom.createElementNS(namespaceContext.getNamespaceURI("sbf"), "sbf:Framework");
         newElement.setAttribute("version", "2.0");
         soapHeader.appendChild(newElement);
         newElement = dom.createElementNS(namespaceContext.getNamespaceURI("sb"), "sb:Sender");
-        newElement.setAttribute("providerID", issuer);
+        newElement.setAttribute("providerID", samlSession.getPortalEntityID());
         soapHeader.appendChild(newElement);
         newElement = dom.createElementNS(namespaceContext.getNamespaceURI("wsa"), "wsa:MessageID");
         String messageID = generateMessageID();
