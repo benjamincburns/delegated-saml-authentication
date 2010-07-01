@@ -30,12 +30,16 @@ import javax.xml.xpath.XPathFactory;
 
 import org.apache.commons.pool.BaseKeyedPoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericKeyedObjectPool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Eric Dalquist
  * @version $Revision$
  */
 public class XPathExpressionPool {
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+    
     private final GenericKeyedObjectPool pool;
     private final NamespaceContext namespaceContext;
     
@@ -61,6 +65,10 @@ public class XPathExpressionPool {
     }
 
     public <T> T doWithExpression(String expression, XPathExpressionCallback<T> callback) throws XPathExpressionException {
+        if (this.logger.isDebugEnabled()) {
+            this.logger.debug("Pooled expression {}: active={}, idle={}", new Object[] {expression, this.pool.getNumActive(expression), this.pool.getNumIdle(expression)});
+        }
+        
         try {
             final XPathExpression xPathExpression = (XPathExpression)this.pool.borrowObject(expression);
             try {
@@ -106,7 +114,15 @@ public class XPathExpressionPool {
                 xPath.setNamespaceContext(namespaceContext);
             }
             
+            logger.debug("Creating XPathExpression from: {}", expression);
+            
             return xPath.compile(expression);
+        }
+
+        @Override
+        public void destroyObject(Object key, Object obj) throws Exception {
+            final String expression = (String)key;
+            logger.debug("Destroying XPathExpression: {}", expression);
         }
     }
     

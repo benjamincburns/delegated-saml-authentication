@@ -160,15 +160,8 @@ public class SAMLDelegatedAuthenticationService {
     }
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
     // The following represents the entire delegated authentication flow
-    if (getSOAPRequest(samlSession, resource, authnState) &&
-        getIDP(samlSession, authnState) &&
-        validateIDP(samlSession, authnState) &&
-        processSOAPRequest(samlSession, authnState) &&
-        getSOAPResponse(samlSession, authnState) &&
-        processSOAPResponse(samlSession, authnState)) {
-        
-        HttpResponse response = sendSOAPResponse(samlSession, authnState);
-        return response;
+    if (getSOAPRequest(samlSession, resource, authnState)) {
+        return this.authenticate(samlSession, authnState);
     }
       
     return null;
@@ -201,17 +194,21 @@ public class SAMLDelegatedAuthenticationService {
     }
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
     authnState.setSoapRequest(paosBytes);
-    // The following represents the entire delegated authentication flow
-    if (getIDP(samlSession, authnState) && 
-        validateIDP(samlSession, authnState) && 
-        processSOAPRequest(samlSession, authnState) && 
-        getSOAPResponse(samlSession, authnState) && 
-        processSOAPResponse(samlSession, authnState)) {
-        
-        HttpResponse response = sendSOAPResponse(samlSession, authnState);
-        return response;
-    }
-    return null;
+    return this.authenticate(samlSession, authnState);
+  }
+  
+  private HttpResponse authenticate(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
+      // The following represents the entire delegated authentication flow
+      if (getIDP(samlSession, authnState) && 
+          validateIDP(samlSession, authnState) && 
+          processSOAPRequest(samlSession, authnState) && 
+          getSOAPResponse(samlSession, authnState) && 
+          processSOAPResponse(samlSession, authnState)) {
+          
+          HttpResponse response = sendSOAPResponse(samlSession, authnState);
+          return response;
+      }
+      return null;
   }
 
   /**
@@ -256,6 +253,7 @@ public class SAMLDelegatedAuthenticationService {
    * @param authnState 
    */
   private boolean validateIDP(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
+    this.logger.debug("Step 2 of 5: Validate against SOAP request");
     InputStream is = null;
     
     try {
@@ -315,6 +313,7 @@ public class SAMLDelegatedAuthenticationService {
    * @return true, if successful
    */
   private boolean getIDP(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
+    this.logger.debug("Step 1 of 5: get IDP from SAML Assertion");
     InputStream is = null;
     try {
       if (samlSession.getSamlAssertionDom() == null) {
@@ -379,6 +378,7 @@ public class SAMLDelegatedAuthenticationService {
    * @return true, if successful
    */
   private boolean processSOAPRequest(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
+    this.logger.debug("Step 3 of 5: Process SOAP Request");
     try {
       String expression = "/S:Envelope/S:Header/paos:Request";
       Document dom = authnState.getSoapRequestDom();
@@ -481,6 +481,8 @@ public class SAMLDelegatedAuthenticationService {
    * @return true, if successful
    */
   private boolean getSOAPResponse(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
+    this.logger.debug("Step 4 of 5: Get SOAP response from IDP");
+      
     String result = null;
     HttpParams params = new BasicHttpParams();
     HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
@@ -528,6 +530,8 @@ public class SAMLDelegatedAuthenticationService {
    * @return true, if successful
    */
   private boolean processSOAPResponse(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
+    this.logger.debug("Step 5 of 5: Processing SOAP response");
+      
     try {
       String expression = "/soap:Envelope/soap:Header/ecp:Response";
       InputStream is = new ByteArrayInputStream(authnState.getSoapResponse().getBytes());
