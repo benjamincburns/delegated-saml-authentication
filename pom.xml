@@ -41,9 +41,9 @@
     </repositories>
     
     <scm>
-        <connection>scm:svn:https://source.jasig.org/sandbox/ShibbolethuPortalIntegration/trunk/Delegated%20SAML%20Authentication</connection>
-        <developerConnection>scm:svn:https://source.jasig.org/sandbox/ShibbolethuPortalIntegration/trunk/Delegated%20SAML%20Authentication</developerConnection>
-        <url>https://developer.jasig.org/source/browse/jasigsvn/sandbox/ShibbolethuPortalIntegration/trunk/Delegated%20SAML%20Authentication</url>
+        <connection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/trunk</connection>
+        <developerConnection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/trunk</developerConnection>
+        <url>https://developer.jasig.org/source/browse/jasigsvn/sandbox/delegated-saml-authentication/trunk</url>
     </scm>
     
     <dependencyManagement>

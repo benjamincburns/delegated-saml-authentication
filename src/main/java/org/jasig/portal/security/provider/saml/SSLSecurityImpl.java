@@ -125,9 +125,14 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
    */
   private KeyStore loadKeyStoreFromFile(String ksFile, String pass) throws KeyStoreException, NoSuchProviderException, NoSuchAlgorithmException, CertificateException, IOException {
     FileInputStream fis = new FileInputStream(ksFile);
-    KeyStore ks = KeyStore.getInstance("JKS", "SUN");
-    ks.load(fis, pass.toCharArray());
-    return ks;
+    try {
+        KeyStore ks = KeyStore.getInstance("JKS", "SUN");
+        ks.load(fis, pass.toCharArray());
+        return ks;
+    }
+    finally {
+        fis.close();
+    }
   }
 
   /* (non-Javadoc)

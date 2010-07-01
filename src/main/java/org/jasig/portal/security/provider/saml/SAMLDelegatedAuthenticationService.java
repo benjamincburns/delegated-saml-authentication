@@ -160,20 +160,15 @@ public class SAMLDelegatedAuthenticationService {
     }
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
     // The following represents the entire delegated authentication flow
-    if (getSOAPRequest(samlSession, resource, authnState)) {
-      if (getIDP(samlSession, authnState)) {
-        if (validateIDP(samlSession, authnState)) {
-          if (processSOAPRequest(samlSession, authnState)) {
-            if (getSOAPResponse(samlSession, authnState)) {
-              if (processSOAPResponse(samlSession, authnState)) {
-                HttpResponse response = sendSOAPResponse(samlSession, authnState);
-                postAuthenticationCleanup(samlSession, authnState);
-                return response;
-              }
-            }
-          }
-        }
-      }
+    if (getSOAPRequest(samlSession, resource, authnState) &&
+        getIDP(samlSession, authnState) &&
+        validateIDP(samlSession, authnState) &&
+        processSOAPRequest(samlSession, authnState) &&
+        getSOAPResponse(samlSession, authnState) &&
+        processSOAPResponse(samlSession, authnState)) {
+        
+        HttpResponse response = sendSOAPResponse(samlSession, authnState);
+        return response;
     }
       
     return null;
@@ -207,18 +202,14 @@ public class SAMLDelegatedAuthenticationService {
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
     authnState.setSoapRequest(paosBytes);
     // The following represents the entire delegated authentication flow
-    if (getIDP(samlSession, authnState)) {
-      if (validateIDP(samlSession, authnState)) {
-        if (processSOAPRequest(samlSession, authnState)) {
-          if (getSOAPResponse(samlSession, authnState)) {
-            if (processSOAPResponse(samlSession, authnState)) {
-              HttpResponse response = sendSOAPResponse(samlSession, authnState);
-              postAuthenticationCleanup(samlSession, authnState);
-              return response;
-            }
-          }
-        }
-      }
+    if (getIDP(samlSession, authnState) && 
+        validateIDP(samlSession, authnState) && 
+        processSOAPRequest(samlSession, authnState) && 
+        getSOAPResponse(samlSession, authnState) && 
+        processSOAPResponse(samlSession, authnState)) {
+        
+        HttpResponse response = sendSOAPResponse(samlSession, authnState);
+        return response;
     }
     return null;
   }
@@ -648,8 +639,6 @@ public class SAMLDelegatedAuthenticationService {
     catch (SOAPException ex) {
       logger.error("Error processing a SOAP message.", ex);
       throw new DelegatedAuthenticationRuntimeException("Error processing a SOAP message.", ex);
-    } finally {
-      
     }
   }
 
@@ -806,16 +795,6 @@ public class SAMLDelegatedAuthenticationService {
     fault.setFaultCode(faultCode);
     fault.setFaultString(faultString);
     return se.getOwnerDocument();
-  }
-
-  /**
-   * Clean up SAMLSession after the authentication.  This gets rid of the
-   * SAMLSession attributes no longer needed and lets them become garbage.
-   * 
-   * @param samlSession SAMLSession to clean up
-   * @param resource 
-   */
-  private void postAuthenticationCleanup(SAMLSession samlSession, DelegatedSAMLAuthenticationState resource) {
   }
   
   /**
