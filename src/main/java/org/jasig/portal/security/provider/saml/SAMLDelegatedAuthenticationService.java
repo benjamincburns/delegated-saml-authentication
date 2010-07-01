@@ -37,7 +37,6 @@ import javax.xml.soap.SOAPConstants;
 import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPFault;
-import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.soap.SOAPPart;
 import javax.xml.xpath.XPathConstants;
@@ -48,14 +47,12 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.HttpClientParams;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
@@ -227,39 +224,6 @@ public class SAMLDelegatedAuthenticationService {
   }
 
   /**
-   * This method is designated to quickly retrieve a resource that the caller
-   * has asked for.  If authentication is not needed, this method will quickly
-   * return what the client asked for.
-   * 
-   * @param samlSession SAML session state object
-   * @param resource object representing the simple resource: its URL and
-   *        returned content as a String
-   * @return true, if successful
-   */
-  private boolean getResourceQuickly(SAMLSession samlSession, Resource resource) {
-    HttpGet method = new HttpGet(resource.getResourceUrl());
-    HttpParams params = new BasicHttpParams();
-    HttpClientParams.setRedirecting(params, false);
-    method.setParams(params);
-    
-    
-    try {
-      // There is no need to check the HTTP response status because the HTTP
-      // client will handle normal HTTP protocol flow, including redirects
-      // In case of error, HTTP client will throw an exception
-      resource.setupWSPClientConnection(samlSession);
-      ResponseHandler<String> responseHandler = new BasicResponseHandler();
-      String result = samlSession.getHttpClient().execute(method, responseHandler);
-      resource.setResource(result);
-      return true;
-    } catch (Exception ex) {
-      // There is nothing that can be done about this exception other than to log it
-      logger.error("Exception caught when trying to retrieve the resource.", ex);
-      return false;
-    }
-  }
-
-  /**
    * This method makes a request for a resource, but assuming that the resource
    * is protected, it actually expects to receive a SOAP request for authentication.
    * This is referred to as a PAOS (reversed SOAP) request because the SOAP
@@ -281,7 +245,7 @@ public class SAMLDelegatedAuthenticationService {
       HttpResponse response = samlSession.getHttpClient().execute(method);
       HttpEntity entity = response.getEntity();
       long contentLength = entity.getContentLength();
-      ByteArrayOutputStream os = new ByteArrayOutputStream();
+      ByteArrayOutputStream os = new ByteArrayOutputStream((int)contentLength);
       entity.writeTo(os);
       os.close();
       byte[] paosBytes = os.toByteArray();
@@ -550,10 +514,10 @@ public class SAMLDelegatedAuthenticationService {
         logger.debug("Got SOAP response:\n{}", result);
         authnState.setSoapResponse(result);
         return true;
-      } else {
-        logger.error("Unsupported HTTP result code when retrieving the resource: " + resultCode + ".");
-        throw new DelegatedAuthenticationRuntimeException("Unsupported HTTP result code when retrieving the resource: " + resultCode + ".");
       }
+      
+      logger.error("Unsupported HTTP result code when retrieving the resource: " + resultCode + ".");
+      throw new DelegatedAuthenticationRuntimeException("Unsupported HTTP result code when retrieving the resource: " + resultCode + ".");
     }
     catch (Exception ex) {
       logger.error("Exception caught when trying to retrieve the resource.", ex);
@@ -617,42 +581,45 @@ public class SAMLDelegatedAuthenticationService {
           String modifiedSOAPResponse = writeDomToString(doc);
           authnState.setModifiedSOAPResponse(modifiedSOAPResponse);
           return true;
-        } else {
-          logger.debug("responseConsumerURL {} does not match {}", responseConsumerURL, authnState.getResponseConsumerURL());
-          Document soapFaultMessage = createSOAPFaultDocument("AssertionConsumerServiceURL attribute missing or not matching the expected value.");
-          Element soapHeader = (Element) soapFaultMessage.getFirstChild().getFirstChild();
-          // Now on to the PAOS Response
-          Element paosResponse = soapFaultMessage.createElementNS("urn:liberty:paos:2003-08", "paos:Response");
-          paosResponse.setAttribute(SOAP_PREFIX + ":mustUnderstand", "1");
-          paosResponse.setAttribute(SOAP_PREFIX + ":actor", "http://schemas.xmlsoap.org/soap/actor/next");
-          
-          // messageID is optional
-          if (authnState.getPaosMessageID() != null)
-            paosResponse.setAttribute("refToMessageID", authnState.getPaosMessageID());
-          
-          soapHeader.appendChild(paosResponse);
-  
-          if (authnState.getRelayStateElement() != null) {
-            Node relayState = soapFaultMessage.importNode(authnState.getRelayStateElement(), true);
-            soapHeader.appendChild(relayState);
-          }
-          // Store the SOAP Fault in the SAML Session
-          String modifiedSOAPResponse = writeDomToString(soapFaultMessage);
-          authnState.setModifiedSOAPResponse(modifiedSOAPResponse);
-          sendSOAPFault(samlSession, authnState);
-          return false;
         }
-      } else {
-        // There was no response for the ECP.  Look for and propagate an error.
-        String errorMessage = getSOAPFaultAsString(is);
         
-        logger.warn("No {} node found in SOAP response. Error: {}", expression, errorMessage);
-        
-        if (errorMessage != null)
-          throw new DelegatedAuthenticationRuntimeException(errorMessage);
-
+        logger.debug("responseConsumerURL {} does not match {}", responseConsumerURL, authnState.getResponseConsumerURL());
+        Document soapFaultMessage = createSOAPFaultDocument("AssertionConsumerServiceURL attribute missing or not matching the expected value.");
+        Element soapHeader = (Element) soapFaultMessage.getFirstChild().getFirstChild();
+        // Now on to the PAOS Response
+        Element paosResponse = soapFaultMessage.createElementNS("urn:liberty:paos:2003-08", "paos:Response");
+        paosResponse.setAttribute(SOAP_PREFIX + ":mustUnderstand", "1");
+        paosResponse.setAttribute(SOAP_PREFIX + ":actor", "http://schemas.xmlsoap.org/soap/actor/next");
+          
+        // messageID is optional
+        if (authnState.getPaosMessageID() != null) {
+          paosResponse.setAttribute("refToMessageID", authnState.getPaosMessageID());
+        }
+          
+        soapHeader.appendChild(paosResponse);
+  
+        if (authnState.getRelayStateElement() != null) {
+          Node relayState = soapFaultMessage.importNode(authnState.getRelayStateElement(), true);
+          soapHeader.appendChild(relayState);
+        }
+        // Store the SOAP Fault in the SAML Session
+        String modifiedSOAPResponse = writeDomToString(soapFaultMessage);
+        authnState.setModifiedSOAPResponse(modifiedSOAPResponse);
+        sendSOAPFault(samlSession, authnState);
         return false;
+        
       }
+      
+      // There was no response for the ECP.  Look for and propagate an error.
+      String errorMessage = getSOAPFaultAsString(is);
+        
+      logger.warn("No {} node found in SOAP response. Error: {}", expression, errorMessage);
+        
+      if (errorMessage != null) {
+        throw new DelegatedAuthenticationRuntimeException(errorMessage);
+      }
+
+      return false;
     }
     catch (XPathExpressionException ex) {
       logger.error("XPath programming error.", ex);
@@ -763,7 +730,7 @@ public class SAMLDelegatedAuthenticationService {
       StringEntity postData = new StringEntity(authnState.getModifiedSOAPResponse(), HTTP.UTF_8);
       method.setEntity(postData);
       HttpResponse response = samlSession.getHttpClient().execute(method);
-      int statusCode = response.getStatusLine().getStatusCode();
+      response.getStatusLine().getStatusCode();
       return true;
     } catch (Exception ex) {
       // There is nothing that can be done about this exception other than to log it
@@ -831,7 +798,7 @@ public class SAMLDelegatedAuthenticationService {
     SOAPEnvelope se = sp.getEnvelope();
     se.setPrefix(SOAP_PREFIX);
     se.getHeader().detachNode();
-    SOAPHeader header = se.addHeader();
+    se.addHeader();
     se.getBody().detachNode();
     SOAPBody body = se.addBody();
     SOAPFault fault = body.addFault();

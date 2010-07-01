@@ -51,7 +51,6 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
   private KeyStore keyStore = null;
   private String keyStorePass = null;
   private KeyStore trustStore = null;
-  private String trustStorePass = null;
   private String publicKeys;
   
   /**
@@ -137,7 +136,6 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
     try {
       KeyStore ks = loadKeyStoreFromFile(ksFile, pass);
       this.trustStore = ks;
-      this.trustStorePass = pass;
     }
     catch (Exception ex) {
       throw new DelegatedAuthenticationRuntimeException("Error dealing with SSL.  See stack trace for details.", ex);
