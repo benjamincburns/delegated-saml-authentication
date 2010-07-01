@@ -1,17 +1,22 @@
 /**
- * Copyright 2009 University of Chicago
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to Jasig under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work
+ * for additional information regarding copyright ownership.
+ * Jasig licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a
+ * copy of the License at:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.jasig.portal.security.provider.saml;
 
 import java.io.File;
@@ -31,6 +36,8 @@ import java.util.UUID;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.x509.X509Util;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class wraps some SSL options for enforcing security then communicating
@@ -39,6 +46,7 @@ import org.opensaml.xml.security.x509.X509Util;
  * @author Adam Rybicki
  */
 public class SSLSecurityImpl implements SSLSecurityWrapper {
+  protected final Logger logger = LoggerFactory.getLogger(this.getClass());
   
   private KeyStore keyStore = null;
   private String keyStorePass = null;
@@ -54,7 +62,6 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
   /* (non-Javadoc)
    * @see edu.uchicago.portal.portlets.samltest.domain.SSLSecurityWrapper#getSSLSocketFactory()
    */
-  @Override
   public SSLSocketFactory getSSLSocketFactory() {
     try {
       PublicKeyVerifyingSSLSocketFactory socketFactory = null;
@@ -89,8 +96,8 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
   /* (non-Javadoc)
    */
   private void setSSLClientCredentials(PrivateKey pk, Certificate cert) throws KeyStoreException, NoSuchProviderException, NoSuchAlgorithmException, CertificateException, IOException {
-    System.out.println("Private key: [" + pk.toString() + "].");
-    System.out.println("Certificate: [" + cert.toString() + "].");
+    this.logger.info("Private key: [{}].", pk.toString());
+    this.logger.info("Certificate: [{}].", cert.toString());
     KeyStore ks = KeyStore.getInstance("JKS", "SUN");
     ks.load(null, null);
     Certificate[] certificates = new Certificate[1];
@@ -126,7 +133,6 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
 
   /* (non-Javadoc)
    */
-  @Override
   public void setSSLTrustStore(String ksFile, String pass) {
     try {
       KeyStore ks = loadKeyStoreFromFile(ksFile, pass);
@@ -140,7 +146,6 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
 
   /* (non-Javadoc)
    */
-  @Override
   public void setSSLClientPrivateKeyAndCert(String pkFile, String certFile) {
     PrivateKey key;
     try {
@@ -154,7 +159,6 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
     }
   }
 
-  @Override
   public void setSSLServerPublicKeys(String encodedKeys) {
     this.publicKeys = encodedKeys;
   }

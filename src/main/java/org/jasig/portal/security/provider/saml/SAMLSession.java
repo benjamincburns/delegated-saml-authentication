@@ -1,28 +1,30 @@
 /**
- * Copyright 2009 University of Chicago
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to Jasig under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work
+ * for additional information regarding copyright ownership.
+ * Jasig licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a
+ * copy of the License at:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.jasig.portal.security.provider.saml;
 
 import org.apache.http.client.HttpClient;
-import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
 /**
  * This class is used to maintain the state of delegated SAML authentication
@@ -37,10 +39,10 @@ import org.w3c.dom.Element;
  */
 public class SAMLSession {
   // The original assertion passed to the portal by the SP
-  private String samlAssertion = null;
+  private final String samlAssertion;
   
   // HttpClient connection to the WSP.  This is what encapsulates the HTTP session with the WSP
-  private HttpClient wspHttpClient = null;
+  private final HttpClient wspHttpClient;
   
   private IdPEPRResolver idpResolver = null;
   
@@ -52,6 +54,8 @@ public class SAMLSession {
   
   // Entity ID os the portal
   private String portalEntityID;
+  
+  private boolean skipValidateIdp = false;
 
   /**
    * Public constructor that initializes the SAML session.  This sets up the
@@ -60,19 +64,14 @@ public class SAMLSession {
    * primary connection is blocked. 
    * 
    * @param samlAssertion SAML assertion that was passed to the portal for authentication
+   * @param connectionManager The connection manager to use for the {@link HttpClient} used for making authenticated requests. The caller is responsible for the {@link ClientConnectionManager} lifecycle.
+   * @param params the {@link HttpClient} configuration parameters to use.
    */
-  public SAMLSession(String samlAssertion) {
-    // Borrow the SchemeRegistry from DefaultHttpClient and its ConnectionManager
-    // There should be a better way of getting a default SchemeRegistry
-    DefaultHttpClient client = new DefaultHttpClient ();
-    SchemeRegistry registry = client.getConnectionManager().getSchemeRegistry();
-    // It seems that empty HttpParams work fine, but as with SchemeRegistry there
-    // should be a better way of getting an initialized set.
-    HttpParams params = new BasicHttpParams();
-    client = new DefaultHttpClient (new ThreadSafeClientConnManager(params, registry), params); 
+  public SAMLSession(String samlAssertion, ClientConnectionManager connectionManager, HttpParams params) {
+    final DefaultHttpClient client = new DefaultHttpClient (connectionManager, params); 
     client.addRequestInterceptor(new HttpRequestPreprocessor());
     client.addResponseInterceptor(new HttpRequestPostprocessor(this));
-    setHttpClient(client);
+    this.wspHttpClient = client;
     this.samlAssertion = samlAssertion;
   }
 
@@ -118,13 +117,6 @@ public class SAMLSession {
    */
   public HttpClient getHttpClient() {
     return wspHttpClient;
-  }
-
-  /**
-   * @param wspHttpClient the wspHttpClient to set
-   */
-  protected void setHttpClient(HttpClient wspHttpClient) {
-    this.wspHttpClient = wspHttpClient;
   }
 
   /**
@@ -234,4 +226,16 @@ public class SAMLSession {
   public void setPortalEntityID(String portalEntityID) {
     this.portalEntityID = portalEntityID;
   }
+
+  /**
+   * @return If the IDP host name validation step should be skipped
+   */
+  public boolean isSkipValidateIdp() {
+    return skipValidateIdp;
+  }
+    
+  public void setSkipValidateIdp(boolean skipValidateIdp) {
+    this.skipValidateIdp = skipValidateIdp;
+  }
+  
 }

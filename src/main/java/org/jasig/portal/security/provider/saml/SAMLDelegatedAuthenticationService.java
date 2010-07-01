@@ -1,17 +1,22 @@
 /**
- * Copyright 2009 University of Chicago
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to Jasig under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work
+ * for additional information regarding copyright ownership.
+ * Jasig licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a
+ * copy of the License at:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.jasig.portal.security.provider.saml;
 
 import java.io.ByteArrayInputStream;
@@ -19,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -36,38 +40,27 @@ import javax.xml.soap.SOAPFault;
 import javax.xml.soap.SOAPHeader;
 import javax.xml.soap.SOAPMessage;
 import javax.xml.soap.SOAPPart;
-import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
-import org.apache.http.Header;
 import org.apache.http.HttpEntity;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.HttpVersion;
-import org.apache.http.ProtocolException;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.RedirectHandler;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.DefaultHttpResponseFactory;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.params.HttpProtocolParams;
 import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
 import org.apache.xerces.parsers.DOMParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,10 +92,14 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Adam Rybicki
  */
 public class SAMLDelegatedAuthenticationService {
+
+  // XML namespace context
+  private static final SAMLNamespaceContext NAMESPACE_CONTEXT = new SAMLNamespaceContext();
+  private static final XPathExpressionPool EXPRESSION_POOL = new XPathExpressionPool(NAMESPACE_CONTEXT);
   
-  Logger log = LoggerFactory.getLogger(SAMLDelegatedAuthenticationService.class);
+  protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+  
   private DOMImplementationLS domLoadSaveImpl = null;
-  private SAMLNamespaceContext namespaceContext = new SAMLNamespaceContext();
   private static final String SOAP_PREFIX = "soap";
   
   /**
@@ -115,16 +112,16 @@ public class SAMLDelegatedAuthenticationService {
       domLoadSaveImpl = (DOMImplementationLS)registry.getDOMImplementation("LS");
     }
     catch (ClassCastException ex) {
-      log.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
+      logger.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
     }
     catch (ClassNotFoundException ex) {
-      log.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
+      logger.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
     }
     catch (InstantiationException ex) {
-      log.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
+      logger.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
     }
     catch (IllegalAccessException ex) {
-      log.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
+      logger.error("Unable to initialize XML serializer implementation.  Make sure that the correct jar files are present.", ex);
     }
   }
 
@@ -156,12 +153,12 @@ public class SAMLDelegatedAuthenticationService {
     
     if (samlSession.getSamlAssertion() == null) {
       String message = "SAML assertion not present.";
-      log.error(message);
+      logger.error(message);
       throw new DelegatedAuthenticationRuntimeException(message);
     }
     if (samlSession.getPortalEntityID() == null) {
       String message = "Portal entity ID not present.";
-      log.error(message);
+      logger.error(message);
       throw new DelegatedAuthenticationRuntimeException(message);
     }
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
@@ -202,12 +199,12 @@ public class SAMLDelegatedAuthenticationService {
   public HttpResponse authenticate(SAMLSession samlSession, byte[] paosBytes) {
     if (samlSession.getSamlAssertion() == null) {
       String message = "SAML assertion not present.";
-      log.error(message);
+      logger.error(message);
       throw new DelegatedAuthenticationRuntimeException(message);
     }
     if (samlSession.getPortalEntityID() == null) {
       String message = "Portal entity ID not present.";
-      log.error(message);
+      logger.error(message);
       throw new DelegatedAuthenticationRuntimeException(message);
     }
     DelegatedSAMLAuthenticationState authnState = new DelegatedSAMLAuthenticationState();
@@ -257,7 +254,7 @@ public class SAMLDelegatedAuthenticationService {
       return true;
     } catch (Exception ex) {
       // There is nothing that can be done about this exception other than to log it
-      log.error("Exception caught when trying to retrieve the resource.", ex);
+      logger.error("Exception caught when trying to retrieve the resource.", ex);
       return false;
     }
   }
@@ -273,6 +270,7 @@ public class SAMLDelegatedAuthenticationService {
    * @return
    */
   private boolean getSOAPRequest(SAMLSession samlSession, Resource resource, DelegatedSAMLAuthenticationState authnState) {
+    logger.debug("getSOAPRequest from {}", resource.getResourceUrl());
     HttpGet method = new HttpGet(resource.getResourceUrl());
     
     try {
@@ -291,7 +289,7 @@ public class SAMLDelegatedAuthenticationService {
     } catch (Exception ex) {
       // There is nothing that can be done about this exception other than to log it
       // Exception must be caught and not rethrown to allow normal processing to continue
-      log.error("Exception caught when trying to retrieve the resource.", ex);
+      logger.error("Exception caught when trying to retrieve the resource.", ex);
       throw new DelegatedAuthenticationRuntimeException("Exception caught when trying to retrieve the resource.", ex);
     }
     return true;
@@ -306,34 +304,39 @@ public class SAMLDelegatedAuthenticationService {
     InputStream is = null;
     
     try {
-      XPathFactory xpFactory = XPathFactory.newInstance();
-      XPath xpath = xpFactory.newXPath();
-      xpath.setNamespaceContext(namespaceContext);
-      String expression = "/S:Envelope/S:Header/ecp:Request/samlp:IDPList/samlp:IDPEntry[@ProviderID='" + authnState.getIdp() + "']";
-      XPathExpression xpathExpression = xpath.compile(expression);
       is = new ByteArrayInputStream(authnState.getSoapRequest());
       InputSource source = new InputSource(is);
       DOMParser parser = new DOMParser();
       parser.setFeature("http://xml.org/sax/features/namespaces", true);
       parser.parse(source);
       Document doc = parser.getDocument();
-      NodeList nodes = (NodeList)xpathExpression.evaluate (doc, XPathConstants.NODESET);
+      
+      if (samlSession.isSkipValidateIdp()) {
+          logger.debug("skipValidateIdp is set to true, setting soap request DOM");
+          authnState.setSoapRequestDom(doc);
+          return true;
+      }
+      
+      String expression = "/S:Envelope/S:Header/ecp:Request/samlp:IDPList/samlp:IDPEntry[@ProviderID='" + authnState.getIdp() + "']";
+      NodeList nodes = EXPRESSION_POOL.evaluate(expression, doc, XPathConstants.NODESET);
 
       if (nodes.getLength() > 0) {
+        logger.debug("Found matching IDP using expression {}", expression);
         authnState.setSoapRequestDom(doc);
         return true;
       }
+      logger.debug("No matching IDP found using expression {}", expression);
     }
     catch (XPathExpressionException ex) {
-      log.error("Programming error.  Invalid XPath expression.", ex);
+      logger.error("Programming error.  Invalid XPath expression.", ex);
       throw new DelegatedAuthenticationRuntimeException("Programming error.  Invalid XPath expression.", ex);
     }
     catch (SAXException ex) {
-      log.error("XML error.", ex);
+      logger.error("XML error.", ex);
       throw new DelegatedAuthenticationRuntimeException("XML error.", ex);
     }
     catch (IOException ex) {
-      log.error("Unexpected error.  This method performs no I/O!", ex);
+      logger.error("Unexpected error.  This method performs no I/O!", ex);
       throw new DelegatedAuthenticationRuntimeException("Unexpected error.  This method performs no I/O!", ex);
     }
     finally {
@@ -368,35 +371,35 @@ public class SAMLDelegatedAuthenticationService {
         Document doc = parser.getDocument();
         samlSession.setSamlAssertionDom(doc);
       }
-      XPathFactory xpFactory = XPathFactory.newInstance();
-      XPath xpath = xpFactory.newXPath();
-      xpath.setNamespaceContext(namespaceContext);
       String expression = "/saml2:Assertion/saml2:Issuer";
-      XPathExpression xpathExpression = xpath.compile(expression);
-      Node node = (Node)xpathExpression.evaluate (samlSession.getSamlAssertionDom(), XPathConstants.NODE);
+      Node node = EXPRESSION_POOL.evaluate(expression, samlSession.getSamlAssertionDom(), XPathConstants.NODE);
       
       if (node != null) {
         String idp = node.getTextContent();
+        logger.debug("Found IDP {} using expression {}", idp, expression);
         authnState.setIdp(idp);
         
-        if (samlSession.getIdpResolver() == null)
-          samlSession.setIdpResolver(new AssertionIdpResolverImpl());
+        if (samlSession.getIdpResolver() == null) {
+          samlSession.setIdpResolver(new AssertionIdpResolverImpl(EXPRESSION_POOL));
+        }
         
         samlSession.getIdpResolver().resolve(samlSession, authnState);
         return true;
       }
+      
+      logger.debug("No IDP found using expression {}", expression);
     }
     catch (XPathExpressionException ex) {
-      log.error("Programming error.  Invalid XPath expression.", ex);
+      logger.error("Programming error.  Invalid XPath expression.", ex);
       throw new DelegatedAuthenticationRuntimeException("Programming error.  Invalid XPath expression.", ex);
     }
     catch (SAXException ex) {
-      log.error("XML error.", ex);
-      log.trace("XML parsing error when parsing the SAML assertion.  The assertion was: [" + samlSession.getSamlAssertion() + "].");
+      logger.error("XML error.", ex);
+      logger.trace("XML parsing error when parsing the SAML assertion.  The assertion was: [" + samlSession.getSamlAssertion() + "].");
       throw new DelegatedAuthenticationRuntimeException("XML error.", ex);
     }
     catch (IOException ex) {
-      log.error("Unexpected error.  This method performs no I/O!", ex);
+      logger.error("Unexpected error.  This method performs no I/O!", ex);
       throw new DelegatedAuthenticationRuntimeException("Unexpected error.  This method performs no I/O!", ex);
     }
     finally {
@@ -422,17 +425,14 @@ public class SAMLDelegatedAuthenticationService {
    */
   private boolean processSOAPRequest(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
     try {
-      XPathFactory xpFactory = XPathFactory.newInstance();
-      XPath xpath = xpFactory.newXPath();
-      xpath.setNamespaceContext(namespaceContext);
       String expression = "/S:Envelope/S:Header/paos:Request";
-      XPathExpression xpathExpression = xpath.compile(expression);
       Document dom = authnState.getSoapRequestDom();
-      Node node = (Node)xpathExpression.evaluate (dom, XPathConstants.NODE);
+      Node node = EXPRESSION_POOL.evaluate(expression, dom, XPathConstants.NODE);
       
       if (node != null) {
         // Save the response consumer URL to samlSession
         String responseConsumerURL = node.getAttributes().getNamedItem("responseConsumerURL").getTextContent();
+        logger.debug("Loaded response consumer URL {}", responseConsumerURL);
         authnState.setResponseConsumerURL(responseConsumerURL);
         // Save the PAOS MessageID, if present
         Node paosMessageID = node.getAttributes().getNamedItem("messageID");
@@ -447,35 +447,32 @@ public class SAMLDelegatedAuthenticationService {
 
         // Retrieve the RelayState cookie for sending it back to the WSP with the SOAP Response
         expression = "/S:Envelope/S:Header/ecp:RelayState";
-        xpathExpression = xpath.compile(expression);
-        node = (Node)xpathExpression.evaluate (dom, XPathConstants.NODE);
+        node = EXPRESSION_POOL.evaluate(expression, dom, XPathConstants.NODE);
         Element relayStateElement = (Element)node;
         authnState.setRelayStateElement(relayStateElement);
         node.getParentNode().removeChild(node);
         
         // On to the ecp:Request for removal
         expression = "/S:Envelope/S:Header/ecp:Request";
-        xpathExpression = xpath.compile(expression);
-        node = (Node)xpathExpression.evaluate (dom, XPathConstants.NODE);
+        node = EXPRESSION_POOL.evaluate(expression, dom, XPathConstants.NODE);
         node.getParentNode().removeChild(node);
         
         // Now add some namespace bindings to the SOAP Header
         expression = "/S:Envelope/S:Header";
-        xpathExpression = xpath.compile(expression);
-        Element soapHeader = (Element)xpathExpression.evaluate (dom, XPathConstants.NODE);
+        Element soapHeader = EXPRESSION_POOL.evaluate(expression, dom, XPathConstants.NODE);
         
         // Add new elements to S:Header
-        Element newElement = dom.createElementNS(namespaceContext.getNamespaceURI("sbf"), "sbf:Framework");
+        Element newElement = dom.createElementNS(NAMESPACE_CONTEXT.getNamespaceURI("sbf"), "sbf:Framework");
         newElement.setAttribute("version", "2.0");
         soapHeader.appendChild(newElement);
-        newElement = dom.createElementNS(namespaceContext.getNamespaceURI("sb"), "sb:Sender");
+        newElement = dom.createElementNS(NAMESPACE_CONTEXT.getNamespaceURI("sb"), "sb:Sender");
         newElement.setAttribute("providerID", samlSession.getPortalEntityID());
         soapHeader.appendChild(newElement);
-        newElement = dom.createElementNS(namespaceContext.getNamespaceURI("wsa"), "wsa:MessageID");
+        newElement = dom.createElementNS(NAMESPACE_CONTEXT.getNamespaceURI("wsa"), "wsa:MessageID");
         String messageID = generateMessageID();
         newElement.setTextContent(messageID);
         soapHeader.appendChild(newElement);
-        newElement = dom.createElementNS(namespaceContext.getNamespaceURI("wsa"), "wsa:Action");
+        newElement = dom.createElementNS(NAMESPACE_CONTEXT.getNamespaceURI("wsa"), "wsa:Action");
         newElement.setTextContent("urn:liberty:ssos:2006-08:AuthnRequest");
         soapHeader.appendChild(newElement);
         
@@ -499,11 +496,13 @@ public class SAMLDelegatedAuthenticationService {
         // Store the modified SOAP Request in the SAML Session
         String modifiedSOAPRequest = writeDomToString(dom);
         authnState.setModifiedSOAPRequest(modifiedSOAPRequest);
+        logger.debug("Completed processing of SOAP request");
         return true;
       }
+      logger.debug("Failed to process SOAP request using expression {}", expression);
     }
     catch (XPathExpressionException ex) {
-      log.error("Programming error.  Invalid XPath expression.", ex);
+      logger.error("Programming error.  Invalid XPath expression.", ex);
       throw new DelegatedAuthenticationRuntimeException("Programming error.  Invalid XPath expression.", ex);
     }
     return false;
@@ -535,6 +534,7 @@ public class SAMLDelegatedAuthenticationService {
     HttpClient client = new DefaultHttpClient (params);
     
     try {
+      logger.debug("Getting SOAP response from {} with POST body:\n{}", authnState.getIdpEndpoint(), authnState.getModifiedSOAPRequest());
       setupIdPClientConnection(client, samlSession, authnState);
       HttpPost method = new HttpPost(authnState.getIdpEndpoint());
       StringEntity postData = new StringEntity(authnState.getModifiedSOAPRequest(), HTTP.UTF_8);
@@ -547,15 +547,16 @@ public class SAMLDelegatedAuthenticationService {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         httpEntity.writeTo(output);
         result = output.toString();
+        logger.debug("Got SOAP response:\n{}", result);
         authnState.setSoapResponse(result);
         return true;
       } else {
-        log.error("Unsupported HTTP result code when retrieving the resource: " + resultCode + ".");
+        logger.error("Unsupported HTTP result code when retrieving the resource: " + resultCode + ".");
         throw new DelegatedAuthenticationRuntimeException("Unsupported HTTP result code when retrieving the resource: " + resultCode + ".");
       }
     }
     catch (Exception ex) {
-      log.error("Exception caught when trying to retrieve the resource.", ex);
+      logger.error("Exception caught when trying to retrieve the resource.", ex);
       throw new DelegatedAuthenticationRuntimeException("Exception caught when trying to retrieve the resource.", ex);
     } finally {
       client.getConnectionManager().shutdown();
@@ -573,23 +574,23 @@ public class SAMLDelegatedAuthenticationService {
    */
   private boolean processSOAPResponse(SAMLSession samlSession, DelegatedSAMLAuthenticationState authnState) {
     try {
-      XPathFactory xpFactory = XPathFactory.newInstance();
-      XPath xpath = xpFactory.newXPath();
-      xpath.setNamespaceContext(namespaceContext);
       String expression = "/soap:Envelope/soap:Header/ecp:Response";
-      XPathExpression xpathExpression = xpath.compile(expression);
       InputStream is = new ByteArrayInputStream(authnState.getSoapResponse().getBytes());
       InputSource source = new InputSource(is);
       DOMParser parser = new DOMParser();
       parser.setFeature("http://xml.org/sax/features/namespaces", true);
       parser.parse(source);
       Document doc = parser.getDocument();
-      Node node = (Node)xpathExpression.evaluate (doc, XPathConstants.NODE);
+      Node node = EXPRESSION_POOL.evaluate(expression, doc, XPathConstants.NODE);
       
       if (node != null) {
         String responseConsumerURL = node.getAttributes().getNamedItem("AssertionConsumerServiceURL").getTextContent();
         
+        logger.debug("Found {} node found in SOAP response.", expression);
+        
         if (responseConsumerURL != null && responseConsumerURL.equals(authnState.getResponseConsumerURL())) {
+          logger.debug("responseConsumerURL {} matches {}", responseConsumerURL, authnState.getResponseConsumerURL());
+            
           // Retrieve and save the SOAP prefix used
           String soapPrefix = node.getParentNode().getPrefix();
           Element ecpResponse = (Element)node;
@@ -617,6 +618,7 @@ public class SAMLDelegatedAuthenticationService {
           authnState.setModifiedSOAPResponse(modifiedSOAPResponse);
           return true;
         } else {
+          logger.debug("responseConsumerURL {} does not match {}", responseConsumerURL, authnState.getResponseConsumerURL());
           Document soapFaultMessage = createSOAPFaultDocument("AssertionConsumerServiceURL attribute missing or not matching the expected value.");
           Element soapHeader = (Element) soapFaultMessage.getFirstChild().getFirstChild();
           // Now on to the PAOS Response
@@ -644,6 +646,8 @@ public class SAMLDelegatedAuthenticationService {
         // There was no response for the ECP.  Look for and propagate an error.
         String errorMessage = getSOAPFaultAsString(is);
         
+        logger.warn("No {} node found in SOAP response. Error: {}", expression, errorMessage);
+        
         if (errorMessage != null)
           throw new DelegatedAuthenticationRuntimeException(errorMessage);
 
@@ -651,31 +655,31 @@ public class SAMLDelegatedAuthenticationService {
       }
     }
     catch (XPathExpressionException ex) {
-      log.error("XPath programming error.", ex);
+      logger.error("XPath programming error.", ex);
       throw new DelegatedAuthenticationRuntimeException("XPath programming error.", ex);
     }
     catch (SAXNotRecognizedException ex) {
-      log.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
+      logger.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
       throw new DelegatedAuthenticationRuntimeException("XPath programming error.", ex);
     }
     catch (SAXNotSupportedException ex) {
-      log.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
+      logger.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
       throw new DelegatedAuthenticationRuntimeException("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
     }
     catch (SAXException ex) {
-      log.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
+      logger.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
       throw new DelegatedAuthenticationRuntimeException("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
     }
     catch (DOMException ex) {
-      log.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
+      logger.error("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
       throw new DelegatedAuthenticationRuntimeException("Exception caught when trying to process the SOAP esponse from the IdP.", ex);
     }
     catch (IOException ex) {
-      log.error("This exception should not ever really occur, as the only I/O this method performs is on a ByteArrayInputStream.", ex);
+      logger.error("This exception should not ever really occur, as the only I/O this method performs is on a ByteArrayInputStream.", ex);
       throw new DelegatedAuthenticationRuntimeException("This exception should not ever really occur, as the only I/O this method performs is on a ByteArrayInputStream.", ex);
     }
     catch (SOAPException ex) {
-      log.error("Error processing a SOAP message.", ex);
+      logger.error("Error processing a SOAP message.", ex);
       throw new DelegatedAuthenticationRuntimeException("Error processing a SOAP message.", ex);
     } finally {
       
@@ -737,7 +741,7 @@ public class SAMLDelegatedAuthenticationService {
     } catch (Exception ex) {
       // There is nothing that can be done about this exception other than to log it
       // Exception must be caught and not rethrown to allow normal processing to continue
-      log.error("Exception caught when trying to retrieve the resource.", ex);
+      logger.error("Exception caught when trying to retrieve the resource.", ex);
       throw new DelegatedAuthenticationRuntimeException("Exception caught while sending the delegated authentication assertion to the service provider.", ex);
     }
   }
@@ -764,7 +768,7 @@ public class SAMLDelegatedAuthenticationService {
     } catch (Exception ex) {
       // There is nothing that can be done about this exception other than to log it
       // Exception must be caught and not rethrown to allow normal processing to continue
-      log.error("Exception caught when trying to retrieve the resource.", ex);
+      logger.error("Exception caught when trying to retrieve the resource.", ex);
       throw new DelegatedAuthenticationRuntimeException("Exception caught while sending the delegated authentication assertion to the service provider.", ex);
     }
   }

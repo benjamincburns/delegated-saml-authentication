@@ -1,17 +1,22 @@
 /**
- * Copyright 2009 University of Chicago
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to Jasig under one or more contributor license
+ * agreements. See the NOTICE file distributed with this work
+ * for additional information regarding copyright ownership.
+ * Jasig licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a
+ * copy of the License at:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.jasig.portal.security.provider.saml;
 
 import java.io.IOException;
@@ -47,8 +52,7 @@ import org.slf4j.LoggerFactory;
  * @author Adam Rybicki
  */
 public class PublicKeyVerifyingSSLSocketFactory extends SSLSocketFactory {
-  
-  Logger log = LoggerFactory.getLogger(SSLSocketFactory.class);
+  protected final Logger logger = LoggerFactory.getLogger(this.getClass());
   private PublicKey publicKey = null;
 
   /**
@@ -98,6 +102,8 @@ public class PublicKeyVerifyingSSLSocketFactory extends SSLSocketFactory {
     SSLSocket newSocket = (SSLSocket) super.connectSocket(sock, host, port, localAddress, localPort, params);
     
     if (publicKey != null) {
+        logger.debug("Verifying SSL Socket to {}:{} against configured public key {}", new Object[] {host, port, publicKey});
+        
       SSLSession session = newSocket.getSession();
       Certificate[] certs = session.getPeerCertificates();
       boolean matchFound = false;
@@ -107,9 +113,11 @@ public class PublicKeyVerifyingSSLSocketFactory extends SSLSocketFactory {
         PublicKey certKey = x509.getPublicKey();
         
         if (certKey.equals(publicKey)) {
+            logger.debug("Validated public key against server key: {}", certKey);
           matchFound = true;
           break;
         }
+        logger.debug("server key doesn't match public key: {} ", certKey);
       }
       if (!matchFound) {
         newSocket.close();
