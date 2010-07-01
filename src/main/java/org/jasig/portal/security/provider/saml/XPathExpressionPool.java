@@ -64,7 +64,7 @@ public class XPathExpressionPool {
         try {
             final XPathExpression xPathExpression = (XPathExpression)this.pool.borrowObject(expression);
             try {
-                return callback.doWithExpression(null);
+                return callback.doWithExpression(xPathExpression);
             }
             finally {
                 this.pool.returnObject(expression, xPathExpression);
