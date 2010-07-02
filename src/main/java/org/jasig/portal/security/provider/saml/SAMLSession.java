@@ -234,6 +234,11 @@ public class SAMLSession {
     return skipValidateIdp;
   }
     
+  /**
+   * Set if the IDP host name validation step should be skipped during authentication. This
+   * is generally needed when using a WAYF since the target site will reference the WAYF and
+   * not the IDP in the response.
+   */
   public void setSkipValidateIdp(boolean skipValidateIdp) {
     this.skipValidateIdp = skipValidateIdp;
   }
