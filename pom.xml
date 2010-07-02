@@ -10,7 +10,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.jasig.service</groupId>
     <artifactId>delegated-saml-authentication</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1-SNAPSHOT</version>
     
     <name>Delegated SAML Authentication</name>
     <description>Delegated SAML Authentication</description>
@@ -38,9 +38,9 @@
     </repositories>
     
     <scm>
-        <connection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/tags/delegated-saml-authentication-1.1.0</connection>
-        <developerConnection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/tags/delegated-saml-authentication-1.1.0</developerConnection>
-        <url>https://developer.jasig.org/source/browse/jasigsvn/sandbox/delegated-saml-authentication/tags/delegated-saml-authentication-1.1.0</url>
+        <connection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/trunk</connection>
+        <developerConnection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/trunk</developerConnection>
+        <url>https://developer.jasig.org/source/browse/jasigsvn/sandbox/delegated-saml-authentication/trunk</url>
     </scm>
     
     <dependencyManagement>
