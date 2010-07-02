@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
  * @author Eric Dalquist
  * @version $Revision$
  */
-public class XPathExpressionPool {
+public class XPathExpressionPool implements XPathExpressionExecutor {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     
     private final GenericKeyedObjectPool pool;
@@ -89,6 +89,9 @@ public class XPathExpressionPool {
         }
     }
     
+    /* (non-Javadoc)
+     * @see org.jasig.portal.security.provider.saml.XPathExpressionExecutor#evaluate(java.lang.String, java.lang.Object, javax.xml.namespace.QName)
+     */
     public <T> T evaluate(String expression, final Object item, final QName returnType) throws XPathExpressionException {
         return this.doWithExpression(expression, new XPathExpressionCallback<T>() {
             @SuppressWarnings("unchecked")

@@ -92,7 +92,7 @@ public class SAMLDelegatedAuthenticationService {
 
   // XML namespace context
   private static final SAMLNamespaceContext NAMESPACE_CONTEXT = new SAMLNamespaceContext();
-  private static final XPathExpressionPool EXPRESSION_POOL = new XPathExpressionPool(NAMESPACE_CONTEXT);
+  private static final XPathExpressionExecutor EXPRESSION_POOL = new XPathExpressionPool(NAMESPACE_CONTEXT);
   
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
   

@@ -32,9 +32,9 @@ import org.w3c.dom.Node;
  * @author Adam Rybicki
  */
 public class AssertionIdpResolverImpl implements IdPEPRResolver {
-    private final XPathExpressionPool xPathExpressionPool;
+    private final XPathExpressionExecutor xPathExpressionPool;
     
-    public AssertionIdpResolverImpl(XPathExpressionPool xPathExpressionPool) {
+    public AssertionIdpResolverImpl(XPathExpressionExecutor xPathExpressionPool) {
         this.xPathExpressionPool = xPathExpressionPool;
     }
 
