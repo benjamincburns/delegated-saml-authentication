@@ -33,6 +33,9 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.UUID;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.opensaml.xml.security.SecurityHelper;
 import org.opensaml.xml.security.x509.X509Util;
@@ -79,7 +82,9 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
         if (trustStore != null) {
           socketFactory = new PublicKeyVerifyingSSLSocketFactory(trustStore);
         } else if (publicKeys != null) {
-          socketFactory = new PublicKeyVerifyingSSLSocketFactory(null);
+          final SSLContext sslcontext = SSLContext.getInstance("TLS");
+          sslcontext.init(null, new TrustManager[] { TrustAllX509TrustManager.INSTANCE }, null);
+          socketFactory = new PublicKeyVerifyingSSLSocketFactory(sslcontext);
           socketFactory.setEncodedPublicKeys(publicKeys);
         } else {
           return SSLSocketFactory.getSocketFactory();

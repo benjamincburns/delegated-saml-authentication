@@ -32,6 +32,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 
@@ -54,6 +55,13 @@ import org.slf4j.LoggerFactory;
 public class PublicKeyVerifyingSSLSocketFactory extends SSLSocketFactory {
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
   private PublicKey publicKey = null;
+
+  /**
+   * @param sslContext
+   */
+  public PublicKeyVerifyingSSLSocketFactory(SSLContext sslContext) {
+    super(sslContext);
+  }
 
   /**
    * @see org.apache.http.conn.ssl.SSLSocketFactory#SSLSocketFactory(KeyStore)
