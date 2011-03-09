@@ -23,12 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.KeyException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
@@ -54,44 +49,18 @@ import org.slf4j.LoggerFactory;
  */
 public class PublicKeyVerifyingSSLSocketFactory extends SSLSocketFactory {
   protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-  private PublicKey publicKey = null;
-
-  /**
-   * @param sslContext
-   */
-  public PublicKeyVerifyingSSLSocketFactory(SSLContext sslContext) {
-    super(sslContext);
-  }
-
-  /**
-   * @see org.apache.http.conn.ssl.SSLSocketFactory#SSLSocketFactory(KeyStore)
-   */
-  public PublicKeyVerifyingSSLSocketFactory(KeyStore ks) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
-    super(ks);
-  }
-
-  /**
-   * @see org.apache.http.conn.ssl.SSLSocketFactory#SSLSocketFactory(KeyStore, String)
-   */
-  public PublicKeyVerifyingSSLSocketFactory(KeyStore keyStore, String keyStorePass) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
-    super(keyStore, keyStorePass);
-  }
-
-  /**
-   * @see org.apache.http.conn.ssl.SSLSocketFactory#SSLSocketFactory(KeyStore, String, KeyStore)
-   */
-  public PublicKeyVerifyingSSLSocketFactory(KeyStore keyStore, String keyStorePass, KeyStore trustStore) throws KeyManagementException, UnrecoverableKeyException, NoSuchAlgorithmException, KeyStoreException {
-    super(keyStore, keyStorePass, trustStore);
-  }
+  private final PublicKey publicKey;
 
   /**
    * Set the Base64-encoded public key(s) to validate.  This method decodes the
    * passed public key and keeps it for verification at the time a connection is attempted.
    * 
+   * @param sslContext
    * @param encodedPublicKeys Base64-encoded public key(s)
-   * @throws KeyException
    */
-  public void setEncodedPublicKeys(String encodedPublicKeys) throws KeyException {
+  public PublicKeyVerifyingSSLSocketFactory(SSLContext sslContext, String encodedPublicKeys) throws KeyException {
+    super(sslContext);
+    
     // Need to Base64-decode the bytes first
     byte[] decodedBytes = Base64.decodeBase64(encodedPublicKeys.getBytes());
     publicKey = SecurityHelper.decodePublicKey(decodedBytes, null);

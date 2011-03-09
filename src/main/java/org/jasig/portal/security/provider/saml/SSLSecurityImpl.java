@@ -27,14 +27,18 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.UUID;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.apache.http.conn.ssl.SSLSocketFactory;
 import org.opensaml.xml.security.SecurityHelper;
@@ -64,37 +68,56 @@ public class SSLSecurityImpl implements SSLSecurityWrapper {
   /* (non-Javadoc)
    * @see edu.uchicago.portal.portlets.samltest.domain.SSLSecurityWrapper#getSSLSocketFactory()
    */
-  public SSLSocketFactory getSSLSocketFactory() {
-    try {
-      PublicKeyVerifyingSSLSocketFactory socketFactory = null;
-      
-      if (keyStore != null) {
-        if (trustStore != null) {
-          socketFactory  = new PublicKeyVerifyingSSLSocketFactory(keyStore, keyStorePass, trustStore); 
-        } else {
-          socketFactory = new PublicKeyVerifyingSSLSocketFactory(keyStore, keyStorePass);
-          
-          if (publicKeys != null) {
-            socketFactory.setEncodedPublicKeys(publicKeys);
-          }
+    public SSLSocketFactory getSSLSocketFactory() {
+        try {
+            //Implementation taken from SSLSocketFactory constructor with added support for a trust-all
+            //trust store if no trustStore is explicitly configured and public keys are available
+            KeyManager[] keymanagers = null;
+            if (keyStore != null) {
+                keymanagers = createKeyManagers(keyStore, keyStorePass);
+            }
+            TrustManager[] trustmanagers = null;
+            if (trustStore != null) {
+                trustmanagers = createTrustManagers(trustStore);
+            }
+            else if (publicKeys != null) {
+                trustmanagers = new TrustManager[] { TrustAllX509TrustManager.INSTANCE };
+            }
+
+            final SSLContext sslcontext = SSLContext.getInstance(SSLSocketFactory.TLS);
+            sslcontext.init(keymanagers, trustmanagers, null);
+
+            if (publicKeys != null) {
+                return new PublicKeyVerifyingSSLSocketFactory(sslcontext, publicKeys);
+            }
+
+            return new SSLSocketFactory(sslcontext);
         }
-      } else {
-        if (trustStore != null) {
-          socketFactory = new PublicKeyVerifyingSSLSocketFactory(trustStore);
-        } else if (publicKeys != null) {
-          final SSLContext sslcontext = SSLContext.getInstance("TLS");
-          sslcontext.init(null, new TrustManager[] { TrustAllX509TrustManager.INSTANCE }, null);
-          socketFactory = new PublicKeyVerifyingSSLSocketFactory(sslcontext);
-          socketFactory.setEncodedPublicKeys(publicKeys);
-        } else {
-          return SSLSocketFactory.getSocketFactory();
+        catch (Exception ex) {
+            throw new DelegatedAuthenticationRuntimeException("Error dealing with SSL.  See stack trace for details.", ex);
         }
+    }
+
+  private static KeyManager[] createKeyManagers(final KeyStore keystore, final String password)
+      throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+      if (keystore == null) {
+          throw new IllegalArgumentException("Keystore may not be null");
       }
-      return socketFactory;
-    }
-    catch (Exception ex) {
-      throw new DelegatedAuthenticationRuntimeException("Error dealing with SSL.  See stack trace for details.", ex);
-    }
+      KeyManagerFactory kmfactory = KeyManagerFactory.getInstance(
+          KeyManagerFactory.getDefaultAlgorithm());
+      kmfactory.init(keystore, password != null ? password.toCharArray(): null);
+      return kmfactory.getKeyManagers(); 
+  }
+
+  private static TrustManager[] createTrustManagers(final KeyStore keystore)
+      throws KeyStoreException, NoSuchAlgorithmException { 
+      if (keystore == null) {
+          throw new IllegalArgumentException("Keystore may not be null");
+      }
+      TrustManagerFactory tmfactory = TrustManagerFactory.getInstance(
+          TrustManagerFactory.getDefaultAlgorithm());
+      tmfactory.init(keystore);
+      return tmfactory.getTrustManagers();
   }
 
   /* (non-Javadoc)
