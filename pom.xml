@@ -23,25 +23,51 @@
         <httpcomponents.version>4.0.1</httpcomponents.version>
         <junit.version>4.8.1</junit.version>
         <log4j.version>1.2.16</log4j.version>
-        <opensaml.version>2.3.2</opensaml.version>
+        <opensaml.version>2.6.0</opensaml.version>
         <slf4j.version>1.6.0</slf4j.version>
         <xerces.version>2.9.1</xerces.version>
-        <xmltooling.version>1.2.2</xmltooling.version>
+        <xmltooling.version>1.4.0</xmltooling.version>
+        <springsecurity.version>3.1.2.RELEASE</springsecurity.version>
+        <springsaml.version>1.0.0.RC2</springsaml.version>
     </properties>
     
     <repositories>
         <repository>
-            <id>Internet2</id>
-            <name>Internet2</name>
-            <url>http://shibboleth.internet2.edu/downloads/maven2</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>com.springsource.repository.maven.snapshot</id>
+            <name>SpringSource Enterprise Bundle Maven Repository - SpringSource Snapshot Releases</name>
+            <url>http://maven.springframework.org/snapshot</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>com.springsource.repository.maven.milestone</id>
+            <name>Spring Framework Maven Releases (Maven Central Format)</name>
+            <url>http://maven.springframework.org/release</url>
+        </repository>
+        <repository>
+            <id>shibboleth</id>
+            <name>Shibboleth</name>
+            <url>https://build.shibboleth.net/nexus/content/groups/public/</url>
+            <layout>default</layout>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
     </repositories>
-    
-    <scm>
-        <connection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/trunk</connection>
-        <developerConnection>scm:svn:https://source.jasig.org/sandbox/delegated-saml-authentication/trunk</developerConnection>
-        <url>https://developer.jasig.org/source/browse/jasigsvn/sandbox/delegated-saml-authentication/trunk</url>
-    </scm>
     
     <dependencyManagement>
         <dependencies>
@@ -136,6 +162,16 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.springframework.security.extensions</groupId>
+                <artifactId>spring-security-saml2-core</artifactId>
+                <version>${springsaml.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-config</artifactId>
+                <version>${springsecurity.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
@@ -186,19 +222,26 @@
             <groupId>org.apache.xerces</groupId>
             <artifactId>xml-apis</artifactId>
         </dependency>
-        
+        <dependency>
+            <groupId>org.springframework.security.extensions</groupId>
+            <artifactId>spring-security-saml2-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-config</artifactId>
+        </dependency>
+
         
         <dependency>
             <groupId>org.opensaml</groupId>
             <artifactId>opensaml</artifactId>
-            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
             <scope>runtime</scope>
         </dependency>
-        
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>

@@ -19,29 +19,6 @@
 
 package org.jasig.portal.security.provider.saml;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.Name;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPConstants;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPFault;
-import javax.xml.soap.SOAPMessage;
-import javax.xml.soap.SOAPPart;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -61,12 +38,8 @@ import org.apache.http.protocol.HTTP;
 import org.apache.xerces.parsers.DOMParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.DOMConfiguration;
-import org.w3c.dom.DOMException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.bootstrap.DOMImplementationRegistry;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
@@ -74,6 +47,20 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.SAXNotSupportedException;
+
+import javax.xml.soap.*;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+import java.util.UUID;
 
 /**
  * <p>This class implements the delegated SAML authentication protocol.  Delegated
@@ -403,9 +390,11 @@ public class SAMLDelegatedAuthenticationService {
         // Retrieve the RelayState cookie for sending it back to the WSP with the SOAP Response
         expression = "/S:Envelope/S:Header/ecp:RelayState";
         node = EXPRESSION_POOL.evaluate(expression, dom, XPathConstants.NODE);
-        Element relayStateElement = (Element)node;
-        authnState.setRelayStateElement(relayStateElement);
-        node.getParentNode().removeChild(node);
+        if(node != null){
+            Element relayStateElement = (Element)node;
+            authnState.setRelayStateElement(relayStateElement);
+            node.getParentNode().removeChild(node);
+        }
         
         // On to the ecp:Request for removal
         expression = "/S:Envelope/S:Header/ecp:Request";
@@ -433,7 +422,7 @@ public class SAMLDelegatedAuthenticationService {
         
         // This is the wsse:Security element 
         Element securityElement = dom.createElementNS("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd", "wsse:Security");
-        securityElement.setAttribute("S:mustUnderstand", "1");
+        securityElement.setAttribute(soapHeader.getPrefix() + ":mustUnderstand", "1");
         Element createdElement = dom.createElement("wsu:Created");
         // The examples use Zulu time zone, not local
         TimeZone zuluTimeZone = TimeZone.getTimeZone("Zulu"); 
@@ -494,6 +483,7 @@ public class SAMLDelegatedAuthenticationService {
       logger.debug("Getting SOAP response from {} with POST body:\n{}", authnState.getIdpEndpoint(), authnState.getModifiedSOAPRequest());
       setupIdPClientConnection(client, samlSession, authnState);
       HttpPost method = new HttpPost(authnState.getIdpEndpoint());
+      method.setHeader("Content-Type", "text/xml");
       StringEntity postData = new StringEntity(authnState.getModifiedSOAPRequest(), HTTP.UTF_8);
       method.setEntity(postData);
       HttpResponse httpResponse = client.execute(method);
